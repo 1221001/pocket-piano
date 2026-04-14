@@ -1,0 +1,229 @@
+:root {
+  --bg-top: #f2eedf;
+  --bg-bottom: #d8ddc8;
+  --panel-bg: rgba(255, 252, 245, 0.78);
+  --panel-border: rgba(49, 42, 26, 0.08);
+  --text-primary: #1f1b13;
+  --text-secondary: rgba(31, 27, 19, 0.7);
+  --accent: #c56b3d;
+  --accent-strong: #9c4c28;
+  --white-key-shadow: rgba(40, 28, 12, 0.1);
+  --black-key-shadow: rgba(0, 0, 0, 0.25);
+  --white-key-width: 52px;
+  --white-key-height: 320px;
+  --black-key-width: 32px;
+  --black-key-height: 192px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Trebuchet MS", "Avenir Next", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.6), transparent 30%),
+    linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+  color: var(--text-primary);
+  touch-action: manipulation;
+}
+
+body {
+  padding: 20px 16px calc(24px + var(--safe-bottom));
+}
+
+.app-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.hero,
+.panel {
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  box-shadow: 0 20px 45px rgba(70, 56, 27, 0.08);
+}
+
+.hero {
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(32px, 8vw, 52px);
+  line-height: 0.94;
+}
+
+.subcopy {
+  margin-top: 12px;
+  max-width: 560px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.primary-button,
+.stepper button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.primary-button {
+  justify-self: start;
+  padding: 14px 18px;
+  border-radius: 999px;
+  color: #fffaf3;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 12px 24px rgba(156, 76, 40, 0.24);
+}
+
+.primary-button.is-ready {
+  background: linear-gradient(135deg, #4c8f61, #2f6c45);
+  box-shadow: 0 12px 24px rgba(47, 108, 69, 0.22);
+}
+
+.panel {
+  padding: 18px;
+}
+
+.panel-heading,
+.keyboard-header,
+.setting-row,
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.setting-row {
+  flex-wrap: wrap;
+}
+
+.setting-row input[type="range"] {
+  width: min(100%, 360px);
+  accent-color: var(--accent);
+}
+
+.badge,
+.hint,
+#octaveValue {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.stepper {
+  background: rgba(255, 255, 255, 0.65);
+  padding: 6px;
+  border-radius: 999px;
+}
+
+.stepper button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: white;
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.keyboard-panel {
+  overflow: hidden;
+}
+
+.keyboard-header {
+  margin-bottom: 16px;
+}
+
+.keyboard-viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+.keyboard {
+  position: relative;
+  min-height: calc(var(--white-key-height) + 8px);
+}
+
+.white-key,
+.black-key {
+  position: absolute;
+  top: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.white-key {
+  width: var(--white-key-width);
+  height: var(--white-key-height);
+  border-radius: 0 0 14px 14px;
+  border: 1px solid rgba(22, 17, 11, 0.14);
+  background: linear-gradient(180deg, #fffef9 0%, #f2eddc 100%);
+  box-shadow: inset 0 -8px 12px rgba(188, 170, 126, 0.15), 0 8px 20px var(--white-key-shadow);
+}
+
+.white-key.active {
+  background: linear-gradient(180deg, #f6ddb0 0%, #edca84 100%);
+}
+
+.white-key-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(20, 16, 11, 0.48);
+  letter-spacing: 0.04em;
+}
+
+.black-key {
+  width: var(--black-key-width);
+  height: var(--black-key-height);
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(180deg, #313131 0%, #080808 100%);
+  box-shadow: inset 0 -6px 10px rgba(255, 255, 255, 0.05), 0 8px 18px var(--black-key-shadow);
+  z-index: 2;
+}
+
+.black-key.active {
+  background: linear-gradient(180deg, #666666 0%, #171717 100%);
+}
+
+@media (min-width: 760px) {
+  .hero {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+}

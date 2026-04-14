@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ece5d4" />
+    <title>Pocket Piano</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Mobile Piano</p>
+          <h1>Pocket Piano</h1>
+          <p class="subcopy">
+            Swipe sideways to see all keys. White keys keep subtle labels like D1 without blocking
+            your playing.
+          </p>
+        </div>
+        <button id="audioToggle" class="primary-button" type="button">Tap to enable sound</button>
+      </header>
+
+      <section class="panel settings-panel">
+        <div class="panel-heading">
+          <h2>Settings</h2>
+          <span id="sizeValue" class="badge">52 px</span>
+        </div>
+        <label class="setting-row" for="keySize">
+          <span>White key size</span>
+          <input id="keySize" type="range" min="40" max="76" step="2" value="52" />
+        </label>
+        <div class="setting-row">
+          <span>Keyboard range</span>
+          <div class="stepper">
+            <button id="octaveDown" type="button" aria-label="Reduce octaves">-</button>
+            <span id="octaveValue">4 octaves</span>
+            <button id="octaveUp" type="button" aria-label="Increase octaves">+</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel keyboard-panel">
+        <div class="keyboard-header">
+          <h2>Keyboard</h2>
+          <span class="hint">Swipe horizontally</span>
+        </div>
+        <div id="keyboardViewport" class="keyboard-viewport">
+          <div id="keyboard" class="keyboard"></div>
+        </div>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
