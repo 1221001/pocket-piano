@@ -124,39 +124,61 @@ const audio = {
 };
 
 function init() {
-  ui.keySize.value = String(state.whiteKeyWidth);
-  ui.toneSelect.value = state.tone;
+  if (ui.keySize) {
+    ui.keySize.value = String(state.whiteKeyWidth);
+  }
+  if (ui.toneSelect) {
+    ui.toneSelect.value = state.tone;
+  }
   renderSettings();
   renderKeyboard();
   bindEvents();
 }
 
 function bindEvents() {
-  ui.audioToggle.addEventListener("click", enableAudio);
-  ui.toneSelect.addEventListener("change", (event) => {
-    state.tone = event.target.value;
-    saveTone(STORAGE_KEYS.tone, state.tone);
-    stopAllNotes();
-  });
-  ui.keySize.addEventListener("input", (event) => {
-    state.whiteKeyWidth = Number(event.target.value);
-    saveNumber(STORAGE_KEYS.whiteKeyWidth, state.whiteKeyWidth);
-    renderSettings();
-    renderKeyboard();
-  });
+  if (ui.audioToggle) {
+    ui.audioToggle.addEventListener("click", enableAudio);
+  }
+  if (ui.toneSelect) {
+    ui.toneSelect.addEventListener("change", (event) => {
+      state.tone = event.target.value;
+      saveTone(STORAGE_KEYS.tone, state.tone);
+      stopAllNotes();
+    });
+  }
+  if (ui.keySize) {
+    ui.keySize.addEventListener("input", (event) => {
+      state.whiteKeyWidth = Number(event.target.value);
+      saveNumber(STORAGE_KEYS.whiteKeyWidth, state.whiteKeyWidth);
+      renderSettings();
+      renderKeyboard();
+    });
+  }
 
-  ui.octaveDown.addEventListener("click", () => updateOctaves(-1));
-  ui.octaveUp.addEventListener("click", () => updateOctaves(1));
+  if (ui.octaveDown) {
+    ui.octaveDown.addEventListener("click", () => updateOctaves(-1));
+  }
+  if (ui.octaveUp) {
+    ui.octaveUp.addEventListener("click", () => updateOctaves(1));
+  }
 }
 
 function renderSettings() {
   document.documentElement.style.setProperty("--white-key-width", `${state.whiteKeyWidth}px`);
   document.documentElement.style.setProperty("--black-key-width", `${Math.round(state.whiteKeyWidth * 0.62)}px`);
-  ui.sizeValue.textContent = `${state.whiteKeyWidth} px`;
-  ui.octaveValue.textContent = `${state.octaveCount} octaves`;
+  if (ui.sizeValue) {
+    ui.sizeValue.textContent = `${state.whiteKeyWidth} px`;
+  }
+  if (ui.octaveValue) {
+    ui.octaveValue.textContent = `${state.octaveCount} octaves`;
+  }
 }
 
 function renderKeyboard() {
+  if (!ui.keyboard) {
+    return;
+  }
+
   ui.keyboard.innerHTML = "";
 
   const whiteKeyHeight = calculateWhiteKeyHeight();
@@ -274,7 +296,9 @@ async function ensureAudioReady() {
   if (!audio.context) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) {
-      ui.audioToggle.textContent = "Audio unsupported";
+      if (ui.audioToggle) {
+        ui.audioToggle.textContent = "Audio unsupported";
+      }
       return false;
     }
 
@@ -289,13 +313,17 @@ async function ensureAudioReady() {
   }
 
   if (audio.context.state !== "running") {
-    ui.audioToggle.textContent = "Tap again for sound";
+    if (ui.audioToggle) {
+      ui.audioToggle.textContent = "Tap again for sound";
+    }
     return false;
   }
 
   state.audioReady = true;
-  ui.audioToggle.textContent = "Sound ready";
-  ui.audioToggle.classList.add("is-ready");
+  if (ui.audioToggle) {
+    ui.audioToggle.textContent = "Sound ready";
+    ui.audioToggle.classList.add("is-ready");
+  }
   return true;
 }
 
