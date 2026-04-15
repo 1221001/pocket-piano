@@ -2,6 +2,7 @@ const STORAGE_KEYS = {
   whiteKeyWidth: "pocket-piano-white-key-width",
   octaveCount: "pocket-piano-octave-count",
   tone: "pocket-piano-tone",
+  volume: "pocket-piano-volume",
 };
 
 const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -18,6 +19,8 @@ const firstMidiNote = 24;
 const ui = {
   audioToggle: document.getElementById("audioToggle"),
   toneSelect: document.getElementById("toneSelect"),
+  volumeLevel: document.getElementById("volumeLevel"),
+  volumeValue: document.getElementById("volumeValue"),
   keySize: document.getElementById("keySize"),
   sizeValue: document.getElementById("sizeValue"),
   octaveDown: document.getElementById("octaveDown"),
@@ -114,14 +117,18 @@ const state = {
   whiteKeyWidth: loadNumber(STORAGE_KEYS.whiteKeyWidth, 52),
   octaveCount: clamp(loadNumber(STORAGE_KEYS.octaveCount, 4), 3, 6),
   tone: loadTone(STORAGE_KEYS.tone, "classicGrand"),
+  volume: clamp(loadNumber(STORAGE_KEYS.volume, 100), 0, 200),
   audioReady: false,
 };
 
 const audio = {
   context: null,
+  compressor: null,
   masterGain: null,
   activeNotes: new Map(),
 };
+
+const BASE_MASTER_GAIN = 1.4;
 
 function init() {
   if (ui.keySize) {
@@ -129,6 +136,9 @@ function init() {
   }
   if (ui.toneSelect) {
     ui.toneSelect.value = state.tone;
+  }
+  if (ui.volumeLevel) {
+    ui.volumeLevel.value = String(state.volume);
   }
   renderSettings();
   renderKeyboard();
@@ -144,6 +154,14 @@ function bindEvents() {
       state.tone = event.target.value;
       saveTone(STORAGE_KEYS.tone, state.tone);
       stopAllNotes();
+    });
+  }
+  if (ui.volumeLevel) {
+    ui.volumeLevel.addEventListener("input", (event) => {
+      state.volume = Number(event.target.value);
+      saveNumber(STORAGE_KEYS.volume, state.volume);
+      renderSettings();
+      syncMasterVolume();
     });
   }
   if (ui.keySize) {
@@ -168,6 +186,9 @@ function renderSettings() {
   document.documentElement.style.setProperty("--black-key-width", `${Math.round(state.whiteKeyWidth * 0.62)}px`);
   if (ui.sizeValue) {
     ui.sizeValue.textContent = `${state.whiteKeyWidth} px`;
+  }
+  if (ui.volumeValue) {
+    ui.volumeValue.textContent = `${state.volume}%`;
   }
   if (ui.octaveValue) {
     ui.octaveValue.textContent = `${state.octaveCount} octaves`;
@@ -303,9 +324,16 @@ async function ensureAudioReady() {
     }
 
     audio.context = new AudioContextClass();
+    audio.compressor = audio.context.createDynamicsCompressor();
     audio.masterGain = audio.context.createGain();
-    audio.masterGain.gain.value = 0.14;
-    audio.masterGain.connect(audio.context.destination);
+    audio.compressor.threshold.setValueAtTime(-18, audio.context.currentTime);
+    audio.compressor.knee.setValueAtTime(18, audio.context.currentTime);
+    audio.compressor.ratio.setValueAtTime(12, audio.context.currentTime);
+    audio.compressor.attack.setValueAtTime(0.003, audio.context.currentTime);
+    audio.compressor.release.setValueAtTime(0.2, audio.context.currentTime);
+    syncMasterVolume();
+    audio.masterGain.connect(audio.compressor);
+    audio.compressor.connect(audio.context.destination);
   }
 
   if (audio.context.state === "suspended") {
@@ -423,6 +451,16 @@ function loadTone(key, fallback) {
 
 function saveTone(key, value) {
   window.localStorage.setItem(key, value);
+}
+
+function syncMasterVolume() {
+  if (!audio.masterGain) {
+    return;
+  }
+
+  const targetGain = BASE_MASTER_GAIN * (state.volume / 100);
+  const now = audio.context ? audio.context.currentTime : 0;
+  audio.masterGain.gain.setValueAtTime(targetGain, now);
 }
 
 function clamp(value, min, max) {
