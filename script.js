@@ -27,19 +27,6 @@ const ui = {
   keyboardViewport: document.getElementById("keyboardViewport"),
 };
 
-const state = {
-  whiteKeyWidth: loadNumber(STORAGE_KEYS.whiteKeyWidth, 52),
-  octaveCount: clamp(loadNumber(STORAGE_KEYS.octaveCount, 4), 3, 6),
-  tone: loadTone(STORAGE_KEYS.tone, "classicGrand"),
-  audioReady: false,
-};
-
-const audio = {
-  context: null,
-  masterGain: null,
-  activeNotes: new Map(),
-};
-
 const tonePresets = {
   classicGrand: {
     label: "Classic Grand",
@@ -121,6 +108,19 @@ const tonePresets = {
     tremoloDepth: 0.18,
     tremoloRate: 4.6,
   },
+};
+
+const state = {
+  whiteKeyWidth: loadNumber(STORAGE_KEYS.whiteKeyWidth, 52),
+  octaveCount: clamp(loadNumber(STORAGE_KEYS.octaveCount, 4), 3, 6),
+  tone: loadTone(STORAGE_KEYS.tone, "classicGrand"),
+  audioReady: false,
+};
+
+const audio = {
+  context: null,
+  masterGain: null,
+  activeNotes: new Map(),
 };
 
 function init() {
