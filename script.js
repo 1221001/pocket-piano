@@ -193,8 +193,9 @@ function renderKeyboard() {
 }
 
 function attachKeyEvents(element, midiNote) {
-  const begin = (event) => {
+  const begin = async (event) => {
     event.preventDefault();
+    await ensureAudioReady();
     element.classList.add("active");
     startNote(midiNote);
   };
@@ -266,11 +267,15 @@ function calculateWhiteKeyHeight() {
 }
 
 async function enableAudio() {
+  await ensureAudioReady();
+}
+
+async function ensureAudioReady() {
   if (!audio.context) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) {
       ui.audioToggle.textContent = "Audio unsupported";
-      return;
+      return false;
     }
 
     audio.context = new AudioContextClass();
@@ -283,9 +288,15 @@ async function enableAudio() {
     await audio.context.resume();
   }
 
+  if (audio.context.state !== "running") {
+    ui.audioToggle.textContent = "Tap again for sound";
+    return false;
+  }
+
   state.audioReady = true;
   ui.audioToggle.textContent = "Sound ready";
   ui.audioToggle.classList.add("is-ready");
+  return true;
 }
 
 function startNote(midiNote) {
