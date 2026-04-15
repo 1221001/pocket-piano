@@ -1,6 +1,7 @@
 const STORAGE_KEYS = {
   whiteKeyWidth: "pocket-piano-white-key-width",
   octaveCount: "pocket-piano-octave-count",
+  tone: "pocket-piano-tone",
 };
 
 const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -16,6 +17,7 @@ const firstMidiNote = 24;
 
 const ui = {
   audioToggle: document.getElementById("audioToggle"),
+  toneSelect: document.getElementById("toneSelect"),
   keySize: document.getElementById("keySize"),
   sizeValue: document.getElementById("sizeValue"),
   octaveDown: document.getElementById("octaveDown"),
@@ -28,6 +30,7 @@ const ui = {
 const state = {
   whiteKeyWidth: loadNumber(STORAGE_KEYS.whiteKeyWidth, 52),
   octaveCount: clamp(loadNumber(STORAGE_KEYS.octaveCount, 4), 3, 6),
+  tone: loadTone(STORAGE_KEYS.tone, "classicGrand"),
   audioReady: false,
 };
 
@@ -37,8 +40,92 @@ const audio = {
   activeNotes: new Map(),
 };
 
+const tonePresets = {
+  classicGrand: {
+    label: "Classic Grand",
+    harmonics: [
+      { type: "triangle", gain: 0.9, detune: 0 },
+      { type: "sine", gain: 0.26, detune: 12 },
+      { type: "triangle", gain: 0.16, detune: -5 },
+    ],
+    lowpass: 4300,
+    attack: 0.01,
+    decay: 0.2,
+    sustain: 0.08,
+    release: 0.48,
+  },
+  brightStage: {
+    label: "Bright Stage",
+    harmonics: [
+      { type: "sawtooth", gain: 0.5, detune: 0 },
+      { type: "triangle", gain: 0.34, detune: 4 },
+      { type: "sine", gain: 0.12, detune: 0 },
+    ],
+    lowpass: 6200,
+    attack: 0.008,
+    decay: 0.16,
+    sustain: 0.09,
+    release: 0.4,
+  },
+  warmUpright: {
+    label: "Warm Upright",
+    harmonics: [
+      { type: "triangle", gain: 0.78, detune: 0 },
+      { type: "sine", gain: 0.3, detune: -3 },
+      { type: "triangle", gain: 0.12, detune: 7 },
+    ],
+    lowpass: 2900,
+    attack: 0.015,
+    decay: 0.22,
+    sustain: 0.07,
+    release: 0.58,
+  },
+  softBallad: {
+    label: "Soft Ballad",
+    harmonics: [
+      { type: "sine", gain: 0.72, detune: 0 },
+      { type: "triangle", gain: 0.22, detune: 2 },
+      { type: "sine", gain: 0.14, detune: 12 },
+    ],
+    lowpass: 2400,
+    attack: 0.02,
+    decay: 0.28,
+    sustain: 0.06,
+    release: 0.72,
+  },
+  honkyTonk: {
+    label: "Honky Tonk",
+    harmonics: [
+      { type: "triangle", gain: 0.65, detune: -7 },
+      { type: "triangle", gain: 0.55, detune: 7 },
+      { type: "sawtooth", gain: 0.14, detune: 0 },
+    ],
+    lowpass: 3800,
+    attack: 0.009,
+    decay: 0.14,
+    sustain: 0.08,
+    release: 0.36,
+  },
+  dreamEP: {
+    label: "Dream EP",
+    harmonics: [
+      { type: "sine", gain: 0.62, detune: 0 },
+      { type: "triangle", gain: 0.34, detune: 12 },
+      { type: "sine", gain: 0.18, detune: 19 },
+    ],
+    lowpass: 5200,
+    attack: 0.014,
+    decay: 0.24,
+    sustain: 0.1,
+    release: 0.86,
+    tremoloDepth: 0.18,
+    tremoloRate: 4.6,
+  },
+};
+
 function init() {
   ui.keySize.value = String(state.whiteKeyWidth);
+  ui.toneSelect.value = state.tone;
   renderSettings();
   renderKeyboard();
   bindEvents();
@@ -46,6 +133,11 @@ function init() {
 
 function bindEvents() {
   ui.audioToggle.addEventListener("click", enableAudio);
+  ui.toneSelect.addEventListener("change", (event) => {
+    state.tone = event.target.value;
+    saveTone(STORAGE_KEYS.tone, state.tone);
+    stopAllNotes();
+  });
   ui.keySize.addEventListener("input", (event) => {
     state.whiteKeyWidth = Number(event.target.value);
     saveNumber(STORAGE_KEYS.whiteKeyWidth, state.whiteKeyWidth);
@@ -201,23 +293,62 @@ function startNote(midiNote) {
     return;
   }
 
+  const preset = tonePresets[state.tone] ?? tonePresets.classicGrand;
   const frequency = 440 * 2 ** ((midiNote - 69) / 12);
   const now = audio.context.currentTime;
-  const oscillator = audio.context.createOscillator();
-  const gain = audio.context.createGain();
+  const noteGain = audio.context.createGain();
+  const noteFilter = audio.context.createBiquadFilter();
+  const harmonicGain = 0.18 / preset.harmonics.length;
+  const oscillators = [];
 
-  oscillator.type = "triangle";
-  oscillator.frequency.setValueAtTime(frequency, now);
+  noteFilter.type = "lowpass";
+  noteFilter.frequency.setValueAtTime(adjustCutoffForPitch(preset.lowpass, midiNote), now);
+  noteFilter.Q.setValueAtTime(0.7, now);
 
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.1, now + 0.08);
+  noteGain.gain.setValueAtTime(0.0001, now);
+  noteGain.gain.exponentialRampToValueAtTime(0.18, now + preset.attack);
+  noteGain.gain.exponentialRampToValueAtTime(Math.max(preset.sustain, 0.0001), now + preset.attack + preset.decay);
 
-  oscillator.connect(gain);
-  gain.connect(audio.masterGain);
-  oscillator.start(now);
+  preset.harmonics.forEach((partial, index) => {
+    const oscillator = audio.context.createOscillator();
+    const gain = audio.context.createGain();
+    const ratio = index + 1;
 
-  audio.activeNotes.set(midiNote, { oscillator, gain });
+    oscillator.type = partial.type;
+    oscillator.frequency.setValueAtTime(frequency * ratio, now);
+    oscillator.detune.setValueAtTime(partial.detune, now);
+
+    gain.gain.setValueAtTime(partial.gain * harmonicGain, now);
+    oscillator.connect(gain);
+    gain.connect(noteFilter);
+    oscillator.start(now);
+
+    oscillators.push({ oscillator, gain });
+  });
+
+  let tremolo = null;
+  if (preset.tremoloDepth && preset.tremoloRate) {
+    const lfo = audio.context.createOscillator();
+    const lfoGain = audio.context.createGain();
+    lfo.type = "sine";
+    lfo.frequency.setValueAtTime(preset.tremoloRate, now);
+    lfoGain.gain.setValueAtTime(preset.tremoloDepth, now);
+    lfo.connect(lfoGain);
+    lfoGain.connect(noteGain.gain);
+    lfo.start(now);
+    tremolo = { lfo, lfoGain };
+  }
+
+  noteFilter.connect(noteGain);
+  noteGain.connect(audio.masterGain);
+
+  audio.activeNotes.set(midiNote, {
+    oscillators,
+    noteGain,
+    noteFilter,
+    tremolo,
+    release: preset.release,
+  });
 }
 
 function stopNote(midiNote) {
@@ -227,10 +358,13 @@ function stopNote(midiNote) {
   }
 
   const now = audio.context.currentTime;
-  note.gain.gain.cancelScheduledValues(now);
-  note.gain.gain.setValueAtTime(Math.max(note.gain.gain.value, 0.0001), now);
-  note.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
-  note.oscillator.stop(now + 0.14);
+  note.noteGain.gain.cancelScheduledValues(now);
+  note.noteGain.gain.setValueAtTime(Math.max(note.noteGain.gain.value, 0.0001), now);
+  note.noteGain.gain.exponentialRampToValueAtTime(0.0001, now + note.release);
+  note.oscillators.forEach(({ oscillator }) => oscillator.stop(now + note.release + 0.02));
+  if (note.tremolo) {
+    note.tremolo.lfo.stop(now + note.release + 0.02);
+  }
   audio.activeNotes.delete(midiNote);
 }
 
@@ -243,13 +377,39 @@ function saveNumber(key, value) {
   window.localStorage.setItem(key, String(value));
 }
 
+function loadTone(key, fallback) {
+  const value = window.localStorage.getItem(key);
+  return value && tonePresets[value] ? value : fallback;
+}
+
+function saveTone(key, value) {
+  window.localStorage.setItem(key, value);
+}
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function adjustCutoffForPitch(baseCutoff, midiNote) {
+  if (midiNote <= 48) {
+    return baseCutoff * 0.84;
+  }
+  if (midiNote >= 72) {
+    return baseCutoff * 1.08;
+  }
+  return baseCutoff;
+}
+
+function stopAllNotes() {
+  [...audio.activeNotes.keys()].forEach((midiNote) => stopNote(midiNote));
+  document.querySelectorAll(".white-key.active, .black-key.active").forEach((element) => {
+    element.classList.remove("active");
+  });
+}
+
 window.addEventListener("resize", renderKeyboard);
 window.addEventListener("pagehide", () => {
-  audio.activeNotes.forEach((_, midiNote) => stopNote(midiNote));
+  stopAllNotes();
 });
 
 init();
