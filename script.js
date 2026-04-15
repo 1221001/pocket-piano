@@ -117,7 +117,7 @@ const state = {
   whiteKeyWidth: loadNumber(STORAGE_KEYS.whiteKeyWidth, 52),
   octaveCount: clamp(loadNumber(STORAGE_KEYS.octaveCount, 4), 3, 6),
   tone: loadTone(STORAGE_KEYS.tone, "classicGrand"),
-  volume: clamp(loadNumber(STORAGE_KEYS.volume, 100), 0, 200),
+  volume: clamp(loadNumber(STORAGE_KEYS.volume, 400), 0, 400),
   audioReady: false,
 };
 
@@ -128,7 +128,7 @@ const audio = {
   activeNotes: new Map(),
 };
 
-const BASE_MASTER_GAIN = 1.4;
+const BASE_MASTER_GAIN = 2.8;
 
 function init() {
   if (ui.keySize) {
@@ -326,11 +326,11 @@ async function ensureAudioReady() {
     audio.context = new AudioContextClass();
     audio.compressor = audio.context.createDynamicsCompressor();
     audio.masterGain = audio.context.createGain();
-    audio.compressor.threshold.setValueAtTime(-18, audio.context.currentTime);
-    audio.compressor.knee.setValueAtTime(18, audio.context.currentTime);
-    audio.compressor.ratio.setValueAtTime(12, audio.context.currentTime);
-    audio.compressor.attack.setValueAtTime(0.003, audio.context.currentTime);
-    audio.compressor.release.setValueAtTime(0.2, audio.context.currentTime);
+    audio.compressor.threshold.setValueAtTime(-24, audio.context.currentTime);
+    audio.compressor.knee.setValueAtTime(24, audio.context.currentTime);
+    audio.compressor.ratio.setValueAtTime(16, audio.context.currentTime);
+    audio.compressor.attack.setValueAtTime(0.002, audio.context.currentTime);
+    audio.compressor.release.setValueAtTime(0.16, audio.context.currentTime);
     syncMasterVolume();
     audio.masterGain.connect(audio.compressor);
     audio.compressor.connect(audio.context.destination);
